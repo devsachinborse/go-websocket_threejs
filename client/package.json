@@ -1,0 +1,23 @@
+{
+  "name": "client",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "parcel src/index.html",
+    "backend": "cd .. && go run main.go",
+    "dev": "concurrently \"npm:start\" \"npm run backend\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "parcel": "^2.12.0",
+    "three": "^0.168.0"
+  },
+  "dependencies": {
+    "dat.gui": "^0.7.9"
+  }
+}

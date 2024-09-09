@@ -1,0 +1,127 @@
+// package main
+
+// import (
+// 	"context"
+// 	"fmt"
+
+// 	"io"
+// 	"log"
+
+// 	"net/http"
+// 	"os"
+// 	"os/signal"
+// 	"sync"
+// 	"syscall"
+// 	"time"
+
+// 	"golang.org/x/net/websocket"
+// )
+
+
+
+// // server
+// type Server struct {
+// 	mu    sync.RWMutex
+// 	conns map[*websocket.Conn]bool
+// }
+
+// func NewServer() *Server {
+// 	return &Server{
+// 		conns: make(map[*websocket.Conn]bool),
+// 	}
+// }
+
+// // func (s *Server) handlerWSOrderbook(ws *websocket.Conn) {
+// // 	log.Printf("New incoming connection to orderbook feed: %v\n", ws.RemoteAddr())
+
+// // 	for {
+
+// // 		// payload := fmt.Sprintf("orderbook data -> %d\n", time.Now().UnixNano())
+// // 		// ws.Write([]byte(payload))
+
+// // 		time.Sleep(2 * time.Second)
+// // 	}
+// // }
+
+// func (s *Server) handleWS(ws *websocket.Conn) {
+// 	log.Printf("New incoming connection: %v\n", ws.RemoteAddr())
+
+// 	s.mu.Lock()
+// 	s.conns[ws] = true
+// 	s.mu.Unlock()
+
+// 	s.readLoop(ws)
+
+// 	s.mu.Lock()
+// 	delete(s.conns, ws)
+// 	s.mu.Unlock()
+
+// 	ws.Close()
+// }
+
+// func (s *Server) readLoop(ws *websocket.Conn) {
+// 	buf := make([]byte, 1024)
+// 	for {
+// 		ws.SetReadDeadline(time.Now().Add(60 * time.Second)) // Set a read timeout
+// 		n, err := ws.Read(buf)
+// 		if err != nil {
+// 			if err == io.EOF {
+// 				break
+// 			}
+// 			log.Printf("Read error: %v\n", err)
+// 			continue
+// 		}
+// 		msg := buf[:n]
+// 		fmt.Printf("recived message : %s\n", msg)
+// 		s.broadcast(msg)
+// 	}
+// 	delete(s.conns, ws)
+// }
+
+// func (s *Server) broadcast(b []byte) {
+// 	s.mu.RLock()
+// 	defer s.mu.RUnlock()
+
+// 	for ws := range s.conns {
+// 		go func(ws *websocket.Conn) {
+// 			if _, err := ws.Write(b); err != nil {
+// 				log.Printf("Write error to %s: %v\n", ws.RemoteAddr, err)
+// 				//optiomal remove connection from map
+// 				delete(s.conns, ws)
+// 			}
+// 		}(ws)
+// 	}
+// }
+
+// func main() {
+// 	server := NewServer()
+
+// 	http.Handle("/ws", websocket.Handler(server.handleWS))
+// 	// http.Handle("/orderbookfeed", websocket.Handler(server.handlerWSOrderbook))
+
+// 	srv := &http.Server{
+// 		Addr: ":1001",
+// 	}
+
+// 	// Graceful shutdown handling
+// 	go func() {
+// 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+// 			log.Fatalf("Could not listen on %s: %v\n", srv.Addr, err)
+// 		}
+// 	}()
+
+// 	quit := make(chan os.Signal, 1)
+// 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+// 	<-quit
+
+// 	log.Println("Shutting down server...")
+
+// 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+// 	defer cancel()
+
+// 	if err := srv.Shutdown(ctx); err != nil {
+// 		log.Fatalf("Server forced to shutdown: %v", err)
+// 	}
+
+// 	log.Println("Server exiting")
+// }
